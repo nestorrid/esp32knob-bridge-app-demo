@@ -158,11 +158,11 @@
         },
         "piedmont": {
             "hashes": [
-                "sha256:836b86a151f8e23bd38bd90009c049057c5d5b277d902decbfd625a432d1f2df",
-                "sha256:f69a1f0e13194148be53f0fa65f2348af652b85880995bd345f109de72a80d72"
+                "sha256:134e233cf78f4eb11e4d649807959fbc10276d4bf2052f0788acbb396f607e37",
+                "sha256:efafc090003af472fa2c60675a21301e72f9fa325f1788ceed3cf01879b8f0bd"
             ],
             "index": "pip_conf_index_global",
-            "version": "==0.1.2"
+            "version": "==0.1.3"
         },
         "pyserial": {
             "hashes": [

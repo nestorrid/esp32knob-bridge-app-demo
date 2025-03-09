@@ -2,7 +2,6 @@ from piedmont import Piedmont
 import os
 
 config = os.path.join(os.path.abspath(os.path.curdir), 'config.yaml')
-
 pie = Piedmont(config)
 
 
