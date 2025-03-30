@@ -1,15 +1,20 @@
-from piedmont import Piedmont
 import os
-import logging
+
+from piedmont import Piedmont
+from protoai import Message
+from protoai.message import MessageRole
+
 
 config = os.path.join(os.path.abspath(os.path.curdir), 'g29.yaml')
 pie = Piedmont(config)
+message = Message('당신은 다국어 어시스턴트입니다. 중국어, 영어, 일본어, 한국어를 사용해야 합니다. ')
 
 gears = ['P', 'R', 'N', 'D']
 current_gear = 'P'
 current_music_idx = 1
 is_music_playing = 0
-is_gear_shift_mode = 1
+knob_mode = 0
+is_listening = 0
 
 
 @pie.serial('KNOB_GEAR_SHIFT')
@@ -41,28 +46,48 @@ def knob_rotate_handler(data: str):
         pie.send_pp_connection('PLAY', current_music_idx)
 
 
-@pie.serial('MESSAGE_KNOB_PRESSED')
+@pie.serial('KNOB_PRESSED')
 def knob_pressed_handler(data: str):
-    global is_music_playing
-    if is_gear_shift_mode == 0:
+    global is_music_playing, is_listening
+    if knob_mode == 1:
         if is_music_playing == 1:
             pie.send_pp_connection('PAUSE')
             is_music_playing = 0
         else:
             pie.send_pp_connection('PLAY', current_music_idx)
             is_music_playing = 1
+    else:
+        if is_listening == 0:
+            pie.send_pp_connection('wheel-button_r2', uppercase=False)
+            is_listening = 1
+        else:
+            pie.send_pp_connection('wheel-button_r3', uppercase=False)
+            is_listening = 0
 
 
-@pie.serial('MESSAGE_KNOB_DOUBLE_PRESSED')
+@pie.serial('KNOB_DOUBLE_PRESSED')
 def knob_double_pressed_handler(data: str):
-    global is_gear_shift_mode
-    is_gear_shift_mode = (is_gear_shift_mode + 1) % 2
-    print(f'KNOB MODE: {is_gear_shift_mode}')
+    global knob_mode
+    knob_mode = int(data)
+    print(f'Current Mode: {knob_mode}')
 
 
-@pie.serial('MESSAGE_KNOB_LONG_PRESSED')
+@pie.serial('KNOB_LONG_PRESSED')
 def knob_long_pressed_handler(data: str):
+    message.messages = message.messages[:1]
     pie.send_pp_connection('wheel-button_spinner', '0', False)
+
+
+@pie.bridge('ASK_AI')
+def ask_ai_handler(data: str):
+    pie.send_pp_connection('WAITING_RESPONSE')
+    try:
+        result = message.append(data).ask()
+        message.append(result, role=MessageRole.ASSISTANT)
+        pie.send_pp_connection('AI_ANSWER', result)
+    except Exception as e:
+        print('Error: {e}')
+        pie.send_pp_connection('AI_ANSWER', '很抱歉, 服务器开小差了, 请稍后再试...')
 
 
 if __name__ == "__main__":
